@@ -3,13 +3,16 @@
 Pi 扩展：在 footer 状态栏显示最近一次助手回复的**预填充 / 解码速度与 TTFT**。
 
 ```
-⚡ prefill 41.3k tok (39.2k cached) · 1.2k t/s (TTFT 34.2s) ｜ decode 456 tok · 11.8 t/s (avg 13.5)
+⚡ PF 73.4k tok (73.2k cached) · 372.7k t/s (TTFT 197ms) ｜ TK 1.2k tok · 45.0 t/s ｜ DC 456 tok · 207.3 t/s (avg 238.2)
 ```
 
-- 流式期间实时刷新解码速度（`⚡ decoding… 500 tok · 476.2 t/s`），阶段跟随输出切换
-  `thinking / decoding / tool call`，>3s 无流事件时显示 `stalled Ns`
-- 结束后显示精确口径：prefill = `input + cacheRead + cacheWrite`（缓存单独标注），
-  decode = 最后一段 `usage.output / 解码耗时`，`(avg)` 为本 session token 加权平均
+- 流式期间实时刷新当前阶段：`TK` = thinking、`DC` = decode（含工具调用输出）；
+  TK 段在思考结束后**冻结保留**，DC 段继续增长，session `(avg)` 始终显示
+- 结束后显示精确口径：`PF` = `input + cacheRead + cacheWrite`（缓存单独标注），
+  `TK / DC` 按流式内容估算比例拆分 `usage.output`（两段之和为精确总量）；
+  TK 速度按思考窗口、DC 速度按解码窗口分别计算
+- 速度值 ≥1000 自动换算 `k`，≥1e6 换算 `M`
+- >3s 无流事件时显示 `stalled Ns`
 - 切换模型时重置 session 平均值（跨模型速度不可比）
 - 报错消息的全零 usage 不覆盖上一条真实数据
 - 无流式 usage 的渠道按内容长度估算，数值带 `~` 前缀
@@ -22,8 +25,8 @@ Pi 扩展：在 footer 状态栏显示最近一次助手回复的**预填充 / �
 # 本地目录（不复制，直接指向磁盘路径）
 pi install /absolute/path/to/pi-speed-status
 
-# git（推荐多机复用；@v1 为固定 ref，避免每次拉取上游变动）
-pi install git:github.com/mxfli/pi-speed-status@v1
+# git（推荐多机复用；@v2 为固定 ref，避免每次拉取上游变动）
+pi install git:github.com/mxfli/pi-speed-status@v2
 
 # 临时试用，不写入 settings
 pi -e /absolute/path/to/pi-speed-status

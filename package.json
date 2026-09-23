@@ -1,6 +1,6 @@
 {
 	"name": "@mxfli/pi-speed-status",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Pi extension: shows prefill / decode speed and TTFT of the latest assistant response in the footer status line",
 	"type": "module",
 	"author": "mxfli",
