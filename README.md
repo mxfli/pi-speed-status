@@ -22,11 +22,14 @@ Pi 扩展：在 footer 状态栏显示最近一次助手回复的**预填充 / �
 要求 pi 0.87 或更新版本（使用 `ctx.ui.setStatus` / `ctx.ui.theme` 标准扩展 API）。
 
 ```bash
-# 本地目录（不复制，直接指向磁盘路径）
-pi install /absolute/path/to/pi-speed-status
+# git（跟随 main：启动会提示可用更新，`pi update --extensions` 拉到最新）
+pi install git:github.com/mxfli/pi-speed-status
 
-# git（推荐多机复用；@v2 为固定 ref，避免每次拉取上游变动）
+# 需要锁版本时改用 tag（固定 ref 不会被 pi update 移动）
 pi install git:github.com/mxfli/pi-speed-status@v2
+
+# 本地目录（不复制，直接指向磁盘路径；本地包不参与更新检查）
+pi install /absolute/path/to/pi-speed-status
 
 # 临时试用，不写入 settings
 pi -e /absolute/path/to/pi-speed-status
@@ -42,10 +45,13 @@ pi -e /absolute/path/to/pi-speed-status
 
 ```bash
 pi list                          # 查看已安装包
-pi update --extensions           # 更新包（git 固定 ref 不会移动）
+pi update --extensions           # 更新包（跟随 main 的拉到最新 commit）
 pi remove git:github.com/mxfli/pi-speed-status
 pi config                        # 交互式启用/禁用扩展（Tab 切换全局 / 项目级）
 ```
+
+固定 ref（`@v1`、`@v2`）不会被 `pi update` 移动，需要用
+`pi install git:github.com/mxfli/pi-speed-status@新tag` 显式切换。
 
 ## 包结构
 
