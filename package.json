@@ -1,0 +1,53 @@
+{
+	"name": "@mxfli/pi-speed-status",
+	"version": "0.1.0",
+	"description": "Pi extension: shows prefill / decode speed and TTFT of the latest assistant response in the footer status line",
+	"type": "module",
+	"author": "mxfli",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mxfli/pi-speed-status.git"
+	},
+	"homepage": "https://github.com/mxfli/pi-speed-status#readme",
+	"bugs": {
+		"url": "https://github.com/mxfli/pi-speed-status/issues"
+	},
+	"keywords": [
+		"pi-package",
+		"pi",
+		"pi-extension",
+		"statusline",
+		"tokens-per-second",
+		"ttft"
+	],
+	"files": [
+		"extensions",
+		"README.md"
+	],
+	"pi": {
+		"extensions": [
+			"./extensions"
+		]
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	},
+	"peerDependenciesMeta": {
+		"@earendil-works/pi-coding-agent": {
+			"optional": true
+		}
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"devDependencies": {
+		"@earendil-works/pi-coding-agent": "^0.87.1",
+		"@types/node": "^22.19.19",
+		"typescript": "^5.9.3"
+	},
+	"scripts": {
+		"test": "node --experimental-strip-types test/smoke.ts",
+		"typecheck": "tsc --noEmit"
+	}
+}
