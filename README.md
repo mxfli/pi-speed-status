@@ -8,7 +8,8 @@ Pi 扩展：在 footer 状态栏显示最近一次助手回复的预填充 / 思
 
 - 流式期间实时刷新：`TK` = thinking，`DC` = decode（含工具调用输出）；TK 段在思考结束后
   冻结保留，session `(avg)` 始终显示
-- `PF` = `input + cacheRead + cacheWrite`；`TK / DC` 按流式内容比例拆分精确的 `usage.output`，
+- `PF` = `input + cacheRead + cacheWrite`；`TK / DC` 优先用 provider 上报的
+  `usage.reasoning`（精确 thinking token 数）拆分 `usage.output`，未上报时回退到流式内容比例，
   各自按阶段窗口计算速度
 - 速度 ≥1000 换算 `k`，≥1e6 换算 `M`；>3s 无流事件显示 `stalled Ns`
 - 无流式 usage 的渠道按内容长度估算（带 `~` 前缀）；切换模型重置 avg；
@@ -16,7 +17,7 @@ Pi 扩展：在 footer 状态栏显示最近一次助手回复的预填充 / 思
 
 ## 安装
 
-要求 pi 0.87+。
+要求 pi 1.0+。
 
 ```bash
 pi install git:github.com/mxfli/pi-speed-status

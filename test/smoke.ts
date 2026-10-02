@@ -105,8 +105,9 @@ assert.match(
 // t+2500ms: message ends. usage.output 600 is split by estimated ratio 10:20
 // into TK 200 / DC 400. Speeds use their own phase windows: TK 0.55s, DC 1.3s.
 now = t0 + 2500;
+// reasoning: 0 (openai-completions always sets it) must fall back to the ratio split.
 await emit("message_end", {
-	message: assistantMessage({ ...usage(600), cacheWrite: 0 }, [
+	message: assistantMessage({ ...usage(600), cacheWrite: 0, reasoning: 0 }, [
 		{ type: "thinking", thinking: thinkText },
 		{ type: "text", text: replyText },
 	]),
@@ -165,6 +166,43 @@ assert.match(
 	statuses.at(-1) ?? "",
 	/^⚡ DC… ~100 tok · 250\.0 t\/s \(avg 245\.6\)$/,
 );
+
+// Provider-reported reasoning tokens give an exact TK/DC split, overriding the
+// content-ratio estimate (which would put all ~200 output tokens in TK here).
+await emit("message_start", { message: assistantMessage(undefined, []) });
+now = t0 + 5100;
+await emit("message_update", {
+	message: assistantMessage({ input: 1000, cacheRead: 0, output: 100, reasoning: 60 }, [
+		{ type: "thinking", thinking: "e".repeat(400) },
+	]),
+	assistantMessageEvent: { type: "thinking_delta" },
+});
+now = t0 + 5300;
+await emit("message_update", {
+	message: assistantMessage({ input: 1000, cacheRead: 0, output: 100, reasoning: 60 }, [
+		{ type: "thinking", thinking: "e".repeat(400) },
+	]),
+	assistantMessageEvent: { type: "thinking_delta" },
+});
+now = t0 + 5400;
+await emit("message_update", {
+	message: assistantMessage({ input: 1000, cacheRead: 0, output: 100, reasoning: 60 }, [
+		{ type: "thinking", thinking: "e".repeat(400) },
+		{ type: "text", text: "f".repeat(40) },
+	]),
+	assistantMessageEvent: { type: "text_delta" },
+});
+now = t0 + 6200;
+await emit("message_end", {
+	message: assistantMessage({ input: 1000, cacheRead: 0, cacheWrite: 0, output: 200, reasoning: 60 }, [
+		{ type: "thinking", thinking: "e".repeat(400) },
+		{ type: "text", text: "f".repeat(40) },
+	]),
+});
+const exact = statuses.at(-1) ?? "";
+// TK 60 tok / 0.2s = 300.0 t/s, DC (200 - 60) tok / 0.8s = 175.0 t/s
+assert.match(exact, /TK 60 tok · 300\.0 t\/s/, "exact reasoning tokens split TK");
+assert.match(exact, /DC 140 tok · 175\.0 t\/s/, "DC is output minus reasoning");
 
 await emit("session_shutdown", {});
 console.log("smoke test passed");

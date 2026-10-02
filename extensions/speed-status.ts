@@ -12,8 +12,10 @@
  *   - PF t/s = PF tok / TTFT；TTFT 起点是响应头到达（message_start），
  *     不含连接建立 / 请求上传 / 服务端排队，远程 API 会略微高估；
  *     TTFT < 100ms 或结果 >1e6 t/s 时视为不可测，速度显 "—"（TTFT 仍固定显示）
- *   - TK / DC tok：用流式内容估算的 thinking / 文本字符比例拆分 usage.output，
- *     两段之和恒等于精确输出总量（现代 tokenizer 下字符比例近似 token 比例）
+ *   - TK / DC tok：优先用 provider 上报的 usage.reasoning（精确 thinking token 数，
+ *     pi >= 0.80.3；anthropic-messages、openai-responses/completions、google 等）；
+ *     未上报时用流式内容估算的 thinking / 文本字符比例拆分 usage.output。
+ *     两段之和恒等于精确输出总量
  *   - TK t/s = TK tok /（最后一个 thinking 事件 - 第一个 thinking 事件）
  *   - DC t/s = DC tok /（message_end - 第一个 text/toolCall 事件）
  *   - avg = 本 session 累计输出 token / 累计生成窗口（首个流事件 → message_end），
@@ -36,6 +38,8 @@ interface UsageLike {
 	output?: number;
 	cacheRead?: number;
 	cacheWrite?: number;
+	// pi >= 0.80.3: provider-reported reasoning tokens, a subset of `output`
+	reasoning?: number;
 }
 
 export default function (pi: ExtensionAPI) {
@@ -217,22 +221,29 @@ export default function (pi: ExtensionAPI) {
 		// 报错消息 usage 全零（providers 的初始空对象），不覆盖上一条真实数据
 		if (promptToks === 0 && outToks === 0) return;
 
-		// 精确输出总量按流式内容估算的字符比例拆成 TK / DC 两段
-		let thinkEst = 0;
-		let decEst = 0;
-		for (const block of event.message.content ?? []) {
-			if (block.type === "text") decEst += estimateTokens(block.text ?? "");
-			else if (block.type === "thinking")
-				thinkEst += estimateTokens(block.thinking ?? "");
-			else if (block.type === "toolCall")
-				decEst += estimateTokens(JSON.stringify(block.arguments ?? {}));
-		}
-		const estTotal = thinkEst + decEst;
+		// TK / DC 拆分：provider 上报 reasoning 时（anthropic-messages、
+		// openai-responses/completions、google 等）直接用精确 thinking token 数；
+		// 否则按流式内容估算的字符比例拆分精确的 usage.output
 		let tkToks = 0;
 		let dcToks = outToks;
-		if (estTotal > 0 && outToks > 0) {
-			tkToks = Math.round((outToks * thinkEst) / estTotal);
+		if (typeof usage.reasoning === "number" && usage.reasoning > 0) {
+			tkToks = Math.min(usage.reasoning, outToks);
 			dcToks = outToks - tkToks;
+		} else {
+			let thinkEst = 0;
+			let decEst = 0;
+			for (const block of event.message.content ?? []) {
+				if (block.type === "text") decEst += estimateTokens(block.text ?? "");
+				else if (block.type === "thinking")
+					thinkEst += estimateTokens(block.thinking ?? "");
+				else if (block.type === "toolCall")
+					decEst += estimateTokens(JSON.stringify(block.arguments ?? {}));
+			}
+			const estTotal = thinkEst + decEst;
+			if (estTotal > 0 && outToks > 0) {
+				tkToks = Math.round((outToks * thinkEst) / estTotal);
+				dcToks = outToks - tkToks;
+			}
 		}
 
 		// TTFT 窗口 <100ms 时噪声主导，>1e6 t/s 必为噪声：速度显 "—"，TTFT 仍固定显示

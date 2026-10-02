@@ -1,6 +1,6 @@
 {
 	"name": "@mxfli/pi-speed-status",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "Pi extension: shows prefill / decode speed and TTFT of the latest assistant response in the footer status line",
 	"type": "module",
 	"author": "mxfli",
@@ -30,6 +30,9 @@
 			"./extensions"
 		]
 	},
+	"engines": {
+		"node": ">=22.19.0"
+	},
 	"peerDependencies": {
 		"@earendil-works/pi-coding-agent": "*"
 	},
@@ -42,7 +45,7 @@
 		"access": "public"
 	},
 	"devDependencies": {
-		"@earendil-works/pi-coding-agent": "^0.87.1",
+		"@earendil-works/pi-coding-agent": "^1.0.0",
 		"@types/node": "^22.19.19",
 		"typescript": "^5.9.3"
 	},
